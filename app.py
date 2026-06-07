@@ -5,33 +5,6 @@ from PIL import Image, ImageOps
 import numpy as np
 import base64
 import os
-import sys
-import uuid
-import sys
-import os
-from streamlit_mic_recorder import mic_recorder
-
-sys.path.append(
-    os.path.join(
-        os.path.dirname(__file__),
-        "bot+whisper"
-    )
-)
-
-from ragbot import build_rag_pipeline
-
-@st.cache_resource
-def load_rag():
-    return build_rag_pipeline()
-
-sys.path.append(
-    os.path.join(
-        os.path.dirname(__file__),
-        "the_rag_one"
-    )
-)
-
-from chat_engine import get_chat_response
 
 # ─────────────────────────────────────────────
 # 1. PAGE CONFIGURATION
@@ -147,7 +120,6 @@ def inject_styles():
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@400;500&display=swap');
-
     /* ── RESET & ROOT ── */
     :root {
         --ink:        #0d1f17;
@@ -161,13 +133,11 @@ def inject_styles():
         --glass:      rgba(255,255,255,0.05);
         --border:     rgba(149,213,178,0.15);
     }
-
     html, body, [data-testid="stAppViewContainer"] {
         background: var(--deep) !important;
         font-family: 'DM Sans', sans-serif !important;
         color: var(--cream) !important;
     }
-
     /* Animated radial background */
     [data-testid="stAppViewContainer"]::before {
         content: '';
@@ -179,17 +149,14 @@ def inject_styles():
         pointer-events: none;
         z-index: 0;
     }
-
     /* Hide Streamlit chrome */
     #MainMenu, footer, header, [data-testid="stToolbar"],
     [data-testid="stDecoration"], [data-testid="stStatusWidget"] { display: none !important; }
     [data-testid="block-container"] { padding: 2rem 3rem 4rem !important; max-width: 1100px !important; }
-
     /* Ensure custom HTML renders correctly */
     .element-container { overflow: visible !important; }
     .stMarkdown { overflow: visible !important; }
     .stMarkdown > div { overflow: visible !important; }
-
     /* ── TYPOGRAPHY ── */
     h1 { font-family: 'Playfair Display', serif !important; font-size: clamp(40px,5vw,64px) !important;
          font-weight: 900 !important; letter-spacing: -2px !important; line-height: 1.05 !important;
@@ -198,7 +165,6 @@ def inject_styles():
     p, label { color: var(--cream) !important; }
     .stMarkdown p { font-size: 15px !important; color: rgba(248,244,236,0.75) !important; }
     .stMarkdown div { color: var(--cream) !important; }
-
     /* ── FILE UPLOADER ── */
     [data-testid="stFileUploader"] {
         background: rgba(255,255,255,0.04) !important;
@@ -212,7 +178,6 @@ def inject_styles():
         font-size: 11px !important; text-transform: uppercase !important; letter-spacing: 0.1em !important; }
     [data-testid="stFileUploader"] section { background: transparent !important; border: none !important; }
     [data-testid="stFileDropzoneInstructions"] { color: rgba(248,244,236,0.5) !important; }
-
     /* ── BUTTONS ── */
     .stButton > button {
         background: linear-gradient(135deg, var(--mid), var(--bright)) !important;
@@ -230,7 +195,6 @@ def inject_styles():
         width: 100% !important;
     }
     .stButton > button:hover { transform: translateY(-2px) !important; box-shadow: 0 14px 36px rgba(45,106,79,0.55) !important; }
-
     /* ── INFO / ALERT ── */
     [data-testid="stAlert"] {
         background: rgba(82,183,136,0.1) !important;
@@ -240,27 +204,21 @@ def inject_styles():
     }
     [data-testid="stAlert"] p { color: var(--light) !important; }
     .stSuccess { background: rgba(82,183,136,0.12) !important; border-color: rgba(82,183,136,0.3) !important; }
-
     /* ── PROGRESS BARS ── */
     [data-testid="stProgressBar"] > div > div {
         background: linear-gradient(90deg, var(--mid), var(--bright)) !important;
         border-radius: 4px !important;
     }
     [data-testid="stProgressBar"] { background: rgba(255,255,255,0.08) !important; border-radius: 4px !important; }
-
     /* ── IMAGES ── */
     [data-testid="stImage"] img { border-radius: 16px !important; border: 1px solid var(--border) !important; }
-
     /* ── SPINNER ── */
     [data-testid="stSpinner"] { color: var(--bright) !important; }
-
     /* ── CAPTIONS ── */
     .stCaption { color: rgba(248,244,236,0.45) !important; font-family: 'DM Mono', monospace !important;
         font-size: 11px !important; letter-spacing: 0.06em !important; text-transform: uppercase !important; }
-
     /* ── DIVIDER ── */
     hr { border-color: rgba(149,213,178,0.12) !important; }
-
     /* ── SCROLLBAR ── */
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: var(--ink); }
@@ -376,7 +334,6 @@ def render_result_card(plant_name, disease_name, confidence, is_healthy, status_
             background: radial-gradient(circle, {accent + "18"}, transparent 70%);
             pointer-events:none;
         "></div>
-
         <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
             <div>
                 <div style="
@@ -581,271 +538,147 @@ def predict_pipeline(model, img_array, class_names):
 # 6. MAIN APP
 # ─────────────────────────────────────────────
 def main():
-    
-
-    if "thread_id" not in st.session_state:
-        st.session_state.thread_id = str(uuid.uuid4())
     inject_styles()
-    
-    tab1, tab2 = st.tabs([
-        "🤖 AgriMind AI",
-        "🌿 Disease Detection"
-    ])
-    with tab1:
-            if "rag_messages" not in st.session_state:
-                st.session_state.rag_messages = []
-            for msg in st.session_state.rag_messages:
+    render_hero()
 
-                with st.chat_message(msg["role"]):
-                    st.write(msg["content"])
-            
-            st.title("🤖 AgriMind AI")
+    st.markdown('<hr style="border-color:rgba(149,213,178,0.1); margin-bottom:40px;">', unsafe_allow_html=True)
 
-            st.caption(
-                "Ask any agriculture or crop disease question"
-            )
-            pipeline = load_rag()
-            col1, col2 = st.columns([20,1])
-            with col2:
-                audio = mic_recorder(
-                    start_prompt="🎤",
-                    stop_prompt="⏹️",
-                    just_once=True,
-                    key="rag_mic"
-                )
-                if audio and "bytes" in audio:
+    # ── INPUT SECTION ──
+    col_a, col_b = st.columns(2, gap="large")
 
-                    with st.spinner("Transcribing..."):
+    with col_a:
+        render_section_label("01", "Crop Identification", "Upload a clear healthy leaf to identify crop type")
+        file_plant_id = st.file_uploader(
+            "Upload Leaf Image",
+            type=["jpg", "png", "jpeg"],
+            key="plant",
+            label_visibility="collapsed"
+        )
+        if file_plant_id:
+            st.image(file_plant_id, caption="Identification sample", use_container_width=True)
 
-                        query, answer = pipeline.ask_voice(
-                            audio["bytes"]
-                        )
+    with col_b:
+        render_section_label("02", "Disease Analysis", "Upload the affected leaf area for diagnosis")
+        file_disease = st.file_uploader(
+            "Upload Affected Leaf",
+            type=["jpg", "png", "jpeg"],
+            key="disease",
+            label_visibility="collapsed"
+        )
+        if file_disease:
+            st.image(file_disease, caption="Diagnostic sample", use_container_width=True)
 
-                    st.session_state.rag_messages.append({
-                        "role": "user",
-                        "content": query
-                    })
+    st.markdown("<br>", unsafe_allow_html=True)
 
-                    st.session_state.rag_messages.append({
-                        "role": "assistant",
-                        "content": answer
-                    })
+    # ── RUN BUTTON ──
+    run_col, _ = st.columns([1, 1])
+    with run_col:
+        run = st.button("🔬  Run Comprehensive Analysis", type="primary", use_container_width=True)
 
-                    st.rerun()
-            for msg in st.session_state.rag_messages:
+    # ── EXECUTION ──
+    if run:
+        if not file_plant_id or not file_disease:
+            st.error("⚠️ Please upload **both** images to proceed.")
+            st.stop()
 
-                with st.chat_message(msg["role"]):
-                    st.write(msg["content"])
-
-        
-
-            pipeline = load_rag()
-            with col1:
-                if "rag_messages" not in st.session_state:
-                    st.session_state.rag_messages = []
-
-                for msg in st.session_state.rag_messages:
-
-                    with st.chat_message(msg["role"]):
-                        st.write(msg["content"])
-
-                query = st.chat_input(
-                    "Ask about crops, diseases, fertilizers..."
-                )
-
-            if query:
-
-                st.session_state.rag_messages.append({
-                    "role": "user",
-                    "content": query
-                })
-
-                with st.chat_message("user"):
-                    st.write(query)
-
-                with st.spinner("Thinking..."):
-
-                    answer = pipeline.ask(query)
-
-                st.session_state.rag_messages.append({
-                    "role": "assistant",
-                    "content": answer
-                })
-
-                with st.chat_message("assistant"):
-                    st.write(answer)
-    with tab2:
-        render_hero()
-
-        st.markdown('<hr style="border-color:rgba(149,213,178,0.1); margin-bottom:40px;">', unsafe_allow_html=True)
-
-        # ── INPUT SECTION ──
-        col_a, col_b = st.columns(2, gap="large")
-
-        with col_a:
-            render_section_label("01", "Crop Identification", "Upload a clear healthy leaf to identify crop type")
-            file_plant_id = st.file_uploader(
-                "Upload Leaf Image",
-                type=["jpg", "png", "jpeg"],
-                key="plant",
-                label_visibility="collapsed"
-            )
-            if file_plant_id:
-                st.image(file_plant_id, caption="Identification sample", use_container_width=True)
-
-        with col_b:
-            render_section_label("02", "Disease Analysis", "Upload the affected leaf area for diagnosis")
-            file_disease = st.file_uploader(
-                "Upload Affected Leaf",
-                type=["jpg", "png", "jpeg"],
-                key="disease",
-                label_visibility="collapsed"
-            )
-            if file_disease:
-                st.image(file_disease, caption="Diagnostic sample", use_container_width=True)
-
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        # ── RUN BUTTON ──
-        left, center, right = st.columns([1, 2, 1])
-
-        with center:
-            run = st.button("🔬  Run Comprehensive Analysis", type="primary", use_container_width=True)
-
-        # ── EXECUTION ──
-        if run:
-            if not file_plant_id or not file_disease:
-                st.error("⚠️ Please upload **both** images to proceed.")
-                st.stop()
-
-            with st.spinner("Analyzing bio-markers · running CNN diagnostics…"):
-                try:
-                    # STAGE 1 — ROUTER
-                    router_model = load_cached_model("healthy.keras")
-                    if not router_model:
-                        st.error("❌ Router model 'healthy.keras' not found.")
-                        st.stop()
-
-                    img_array_id, _ = preprocess_image(file_plant_id)
-                    detected_raw, _, _, _ = predict_pipeline(router_model, img_array_id, ROUTER_CLASS_NAMES)
-                    plant_display_name = PLANT_NAME_MAPPING.get(detected_raw, detected_raw.split('_')[0])
-
-                    # STAGE 2 — DISEASE MODEL
-                    target_model_file = MODEL_ROUTER.get(detected_raw)
-                    if not target_model_file:
-                        st.error(f"❌ No model available for: {detected_raw}")
-                        st.stop()
-
-                    disease_model = load_cached_model(target_model_file)
-                    if not disease_model:
-                        st.error(f"❌ Model file '{target_model_file}' is missing.")
-                        st.stop()
-
-                    specific_classes = DISEASE_CLASSES.get(target_model_file, [f"Class {i}" for i in range(10)])
-                    img_array_disease, _ = preprocess_image(file_disease)
-                    disease_name, confidence, top_3, top_idx = predict_pipeline(
-                        disease_model, img_array_disease, specific_classes
-                    )
-
-                    # STAGE 3 — DETERMINE STATUS
-                    is_healthy = "Healthy" in disease_name
-                    if confidence < 55:
-                        disease_name = "Unidentified Issue"
-                        status_msg = "Low confidence — please try a clearer photo"
-                    elif confidence < 70:
-                        status_msg = "Moderate confidence — consider a second sample"
-                    else:
-                        status_msg = "High confidence match · clinically actionable"
-
-                except Exception as e:
-                    st.error(f"An internal error occurred: {e}")
+        with st.spinner("Analyzing bio-markers · running CNN diagnostics…"):
+            try:
+                # STAGE 1 — ROUTER
+                router_model = load_cached_model("healthy.keras")
+                if not router_model:
+                    st.error("❌ Router model 'healthy.keras' not found.")
                     st.stop()
 
-            # ── RESULTS ──
-            st.markdown('<hr style="border-color:rgba(149,213,178,0.1); margin:32px 0;">', unsafe_allow_html=True)
+                img_array_id, _ = preprocess_image(file_plant_id)
+                detected_raw, _, _, _ = predict_pipeline(router_model, img_array_id, ROUTER_CLASS_NAMES)
+                plant_display_name = PLANT_NAME_MAPPING.get(detected_raw, detected_raw.split('_')[0])
 
-            # Main result card
-            render_result_card(plant_display_name, disease_name, confidence, is_healthy, status_msg)
+                # STAGE 2 — DISEASE MODEL
+                target_model_file = MODEL_ROUTER.get(detected_raw)
+                if not target_model_file:
+                    st.error(f"❌ No model available for: {detected_raw}")
+                    st.stop()
 
-            # Distribution
-            st.markdown("""
-            <div style="font-family:'DM Mono',monospace; font-size:10px; text-transform:uppercase;
-                letter-spacing:0.15em; color:#52b788; margin:32px 0 16px;">
-                📊 Prediction Distribution
-            </div>
-            """, unsafe_allow_html=True)
+                disease_model = load_cached_model(target_model_file)
+                if not disease_model:
+                    st.error(f"❌ Model file '{target_model_file}' is missing.")
+                    st.stop()
 
-            bar_colors = ["#52b788", "#e9c46a", "#e76f51"]
-            for i, (name, prob) in enumerate(top_3):
-                render_distribution_bar(name, prob, bar_colors[i % len(bar_colors)])
-
-            # Disease profile (only if not healthy and confident enough)
-            if not is_healthy and confidence >= 55 and disease_name != "Unidentified Issue":
-                st.markdown('<hr style="border-color:rgba(149,213,178,0.1); margin:32px 0;">', unsafe_allow_html=True)
-                info = DISEASE_INFO.get(disease_name, DISEASE_INFO["Default"])
-                render_disease_profile(disease_name, info)
-
-            # Healthy message
-            if is_healthy:
-                st.markdown("""
-                <div style="
-                    background: linear-gradient(135deg, rgba(82,183,136,0.15), rgba(149,213,178,0.08));
-                    border: 1px solid rgba(82,183,136,0.3);
-                    border-radius: 20px;
-                    padding: 32px;
-                    text-align: center;
-                    margin-top: 28px;
-                ">
-                    <div style="font-size:48px; margin-bottom:14px;">🌱</div>
-                    <div style="font-family:'Playfair Display',serif; font-size:26px; font-weight:700;
-                        color:#f8f4ec; margin-bottom:10px;">Your plant looks healthy!</div>
-                    <p style="font-size:15px; color:rgba(248,244,236,0.65); max-width:500px;
-                        margin:0 auto; line-height:1.7;">
-                        No disease signs detected. Keep up with regular watering, adequate sunlight,
-                        and periodic crop rotation to maintain plant health.
-                    </p>
-                </div>
-                """, unsafe_allow_html=True)
-
-            # Footer note
-            # Save prediction info
-            st.session_state["dedicated_plant"] = plant_display_name
-            st.session_state["dedicated_disease"] = disease_name
-            st.session_state["dedicated_confidence"] = confidence
-
-            
-            st.markdown("""
-            <div style="margin-top:48px; padding-top:24px;
-                border-top: 1px solid rgba(149,213,178,0.1);
-                text-align:center; font-family:'DM Mono',monospace;
-                font-size:11px; color:rgba(248,244,236,0.25); letter-spacing:0.06em;">
-                PlantGuard · CNN-based Crop Disease Diagnostics · For advisory use only
-            </div>
-            """, unsafe_allow_html=True)
-        if "dedicated_plant" in st.session_state:
-
-            st.markdown("---")
-            st.subheader("🌾 Ask AgriMind")
-
-            prompt = st.chat_input(
-                "Ask anything about this disease..."
-            )
-
-            if prompt:
-
-                with st.chat_message("user"):
-                    st.write(prompt)
-
-                response = get_chat_response(
-                    plant=st.session_state["dedicated_plant"],
-                    disease=st.session_state["dedicated_disease"],
-                    confidence=st.session_state["dedicated_confidence"],
-                    user_question=prompt,
-                    thread_id=st.session_state.thread_id
+                specific_classes = DISEASE_CLASSES.get(target_model_file, [f"Class {i}" for i in range(10)])
+                img_array_disease, _ = preprocess_image(file_disease)
+                disease_name, confidence, top_3, top_idx = predict_pipeline(
+                    disease_model, img_array_disease, specific_classes
                 )
 
-                with st.chat_message("assistant"):
-                    st.write(response)
+                # STAGE 3 — DETERMINE STATUS
+                is_healthy = "Healthy" in disease_name
+                if confidence < 55:
+                    disease_name = "Unidentified Issue"
+                    status_msg = "Low confidence — please try a clearer photo"
+                elif confidence < 70:
+                    status_msg = "Moderate confidence — consider a second sample"
+                else:
+                    status_msg = "High confidence match · clinically actionable"
+
+            except Exception as e:
+                st.error(f"An internal error occurred: {e}")
+                st.stop()
+
+        # ── RESULTS ──
+        st.markdown('<hr style="border-color:rgba(149,213,178,0.1); margin:32px 0;">', unsafe_allow_html=True)
+
+        # Main result card
+        render_result_card(plant_display_name, disease_name, confidence, is_healthy, status_msg)
+
+        # Distribution
+        st.markdown("""
+        <div style="font-family:'DM Mono',monospace; font-size:10px; text-transform:uppercase;
+            letter-spacing:0.15em; color:#52b788; margin:32px 0 16px;">
+            📊 Prediction Distribution
+        </div>
+        """, unsafe_allow_html=True)
+
+        bar_colors = ["#52b788", "#e9c46a", "#e76f51"]
+        for i, (name, prob) in enumerate(top_3):
+            render_distribution_bar(name, prob, bar_colors[i % len(bar_colors)])
+
+        # Disease profile (only if not healthy and confident enough)
+        if not is_healthy and confidence >= 55 and disease_name != "Unidentified Issue":
+            st.markdown('<hr style="border-color:rgba(149,213,178,0.1); margin:32px 0;">', unsafe_allow_html=True)
+            info = DISEASE_INFO.get(disease_name, DISEASE_INFO["Default"])
+            render_disease_profile(disease_name, info)
+
+        # Healthy message
+        if is_healthy:
+            st.markdown("""
+            <div style="
+                background: linear-gradient(135deg, rgba(82,183,136,0.15), rgba(149,213,178,0.08));
+                border: 1px solid rgba(82,183,136,0.3);
+                border-radius: 20px;
+                padding: 32px;
+                text-align: center;
+                margin-top: 28px;
+            ">
+                <div style="font-size:48px; margin-bottom:14px;">🌱</div>
+                <div style="font-family:'Playfair Display',serif; font-size:26px; font-weight:700;
+                    color:#f8f4ec; margin-bottom:10px;">Your plant looks healthy!</div>
+                <p style="font-size:15px; color:rgba(248,244,236,0.65); max-width:500px;
+                    margin:0 auto; line-height:1.7;">
+                    No disease signs detected. Keep up with regular watering, adequate sunlight,
+                    and periodic crop rotation to maintain plant health.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        # Footer note
+        st.markdown("""
+        <div style="margin-top:48px; padding-top:24px;
+            border-top: 1px solid rgba(149,213,178,0.1);
+            text-align:center; font-family:'DM Mono',monospace;
+            font-size:11px; color:rgba(248,244,236,0.25); letter-spacing:0.06em;">
+            PlantGuard · CNN-based Crop Disease Diagnostics · For advisory use only
+        </div>
+        """, unsafe_allow_html=True)
 
 
 if __name__ == "__main__":
