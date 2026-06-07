@@ -1,9 +1,0 @@
-streamlit
-tensorflow
-Pillow
-numpy
-python-dotenv
-langchain
-langchain-groq
-langchain-core
-langgraph
